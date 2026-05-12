@@ -6,10 +6,13 @@ This directory contains the data processing, deduplication, and AI-scoring engin
 
 ---
 
-## ⏱️ Longitudinal Tracking (Algorithmic Drift Over Time)
-While this pipeline can be used for a single 1-hour snapshot, it is designed for **longitudinal drift tracking**. 
+## 📈 Longitudinal Tracking & Scaling Cohorts
 
-To measure how fast an algorithm builds a filter bubble over an extended period, you should run the analytics pipeline at specific intervals (e.g., Day 1, Day 3, Day 7) during a multi-day experiment. Because S.I.L.O. logs every event with a precise chronological timestamp, running the analyzer at different intervals allows you to chart the exact velocity of recommendation drift over time.
+**1. Tracking Algorithmic Drift Over Time**
+While this pipeline can be used for a single 1-hour snapshot, it is designed for longitudinal drift tracking. To measure how fast an algorithm builds a filter bubble, you should run this analytics pipeline at specific intervals (e.g., Day 1, Day 3, Day 7) during a multi-day experiment. Because S.I.L.O. logs every event with a precise chronological timestamp, analyzing the data at different intervals allows you to chart the exact velocity of recommendation drift over time.
+
+**2. Adding More Personas (Scaling)**
+The S.I.L.O. analytics pipeline dynamically scales. While the default experiment uses 2 personas (Angela and Michelle), the framework can be modified to add more personas into each experimental group (e.g., 5 SSO personas vs. 5 Unique Password personas). As long as the new personas are logged into the `silo_audit.db`, the pipeline will automatically ingest, aggregate, and compare the larger cohorts without requiring any code changes to the analyzers.
 
 ---
 
@@ -29,7 +32,7 @@ To generate an accurate drift report, you must execute the scripts in the follow
 
 ### 3. The Qualitative AI Auditor (`silo_analyzer_zeroshot.py`)
 * **Purpose:** Calculating Recommendation Drift using Machine Learning.
-* **How it works:** This is the core intelligence of the analytics suite. It uses a local Hugging Face transformer model (`cross-encoder/nli-distilroberta-base`) to evaluate the content scraped during the simulation against the persona's defined `interests_wordlist.txt`. It scores every post on a 1-to-5 relevance scale and utilizes Cronbach's Alpha to ensure statistical reliability. It outputs a comprehensive text report detailing the final "Drift Delta" between the SSO and Unique Password personas.
+* **How it works:** This is the core intelligence of the analytics suite. It uses a local Hugging Face transformer model (`cross-encoder/nli-distilroberta-base`) to evaluate the content scraped during the simulation against the personas' defined `interests_wordlist.txt`. It scores every post on a 1-to-5 relevance scale and utilizes Cronbach's Alpha to ensure statistical reliability. It outputs a comprehensive text report detailing the final "Drift Delta" between the experimental cohorts.
 * **Command:** `python silo_analyzer_zeroshot.py`
 
 ---
