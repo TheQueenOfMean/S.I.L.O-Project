@@ -1,2 +1,4 @@
-##This is where the SSO Cookies sessions JSON file. 
-After running seed_master.py, this is where the SSO cookies will be saved. 
+##This is the SSO Persona Cookies sessions JSON file. 
+##After running seed_master.py, this is where the SSO cookies will be saved.
+##Seed_master can be modified for multiple personas, each one will have its own unique
+##JSON file.
