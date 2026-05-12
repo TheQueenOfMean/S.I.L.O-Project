@@ -1,1 +1,2 @@
-##This is where the SSO Cookies sessions JSON file. After running seed_master.py, this is where the SSO cookies will be saved. 
+##This is where the SSO Cookies sessions JSON file. 
+After running seed_master.py, this is where the SSO cookies will be saved. 
