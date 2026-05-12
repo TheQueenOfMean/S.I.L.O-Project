@@ -118,3 +118,101 @@ All final markdown reports and CSV datasets are output directly to the `/results
 
 ## ⚠️ Disclaimer & Ethical Considerations
 This framework was developed strictly for academic research regarding data privacy and algorithmic transparency. It operates using authorized test personas within a localized, hardware-restricted environment and respects the rate limits of the Target Domains by utilizing humanized interaction delays.
+---
+
+## 🐳 Advanced Scaling (Docker & Containerization)
+
+For researchers looking to scale the experiment to dozens or hundreds of concurrent personas, virtual environments on a single laptop will quickly hit hardware limits. Containerizing S.I.L.O. allows you to orchestrate massive parallel cohorts.
+
+### The Two Deployment Paths
+
+**1. Academic HPC & On-Premise Labs (Ideal)**
+If you are deploying Docker on a university supercomputer, an on-premise research cluster, or a powerful home server, you have the optimal setup. As long as the network exits through a standard institutional or residential ISP, you can scale to hundreds of containers natively without triggering datacenter bot-mitigation defenses.
+
+**2. Commercial Cloud Deployments (Proxies Required)**
+**⚠️ CRITICAL WARNING:** If you deploy these containers to commercial cloud providers (AWS, Google Cloud, Azure, DigitalOcean), target platforms like TikTok and X will instantly sandbox or blacklist your datacenter IPs. To run S.I.L.O. in the cloud, you **MUST** route your browser traffic through a Residential Proxy Network.
+
+---
+
+### 1. Dockerfile Configuration
+Because S.I.L.O. utilizes Patchright (a stealth Playwright fork) and native Chromium, your Docker container must use the official Playwright base image to ensure all system-level browser dependencies (codecs, fonts, etc.) are present.
+
+Create a `Dockerfile` in your root directory:
+
+```dockerfile
+# Use the official Playwright Python image to get system browser dependencies
+FROM [mcr.microsoft.com/playwright/python:v1.44.0-jammy](https://mcr.microsoft.com/playwright/python:v1.44.0-jammy)
+
+# Set the working directory
+WORKDIR /app
+
+# Copy the requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install Patchright's stealth Chromium build
+RUN patchright install chromium
+
+# Copy the rest of the framework into the container
+COPY . .
+
+# Default command to run the simulation
+CMD ["python", "sequential_orchestrator.py"]
+```
+
+### 2. Docker Compose (Multi-Persona Orchestration)
+To run multiple cohorts simultaneously without manual terminal management, use `docker-compose`. This isolates your Experimental (SSO) and Control (Unique) groups into separate containers while sharing the same underlying SQLite database.
+
+Create a `docker-compose.yml` file:
+
+```yaml
+version: '3.8'
+
+services:
+  silo_sso_cohort:
+    build: .
+    volumes:
+      # Mount your local directories to prevent data loss when containers spin down
+      - ./results:/app/results
+      - ./sessions:/app/sessions
+      - ./data:/app/data
+    environment:
+      - COHORT_MODE=SSO_ONLY
+      # Only required if deploying to a cloud server:
+      - RESIDENTIAL_PROXY=[http://user:pass@proxy.provider.com:8000](http://user:pass@proxy.provider.com:8000)
+
+  silo_unique_cohort:
+    build: .
+    volumes:
+      - ./results:/app/results
+      - ./sessions:/app/sessions
+      - ./data:/app/data
+    environment:
+      - COHORT_MODE=UNIQUE_ONLY
+      - RESIDENTIAL_PROXY=[http://user:pass@proxy.provider.com:8001](http://user:pass@proxy.provider.com:8001)
+```
+
+### 3. Integrating Proxies (For Cloud Deployments Only)
+If your environment requires proxies to bypass datacenter IP bans, you must inject the proxy environment variable into the Chromium launcher. Update `launch_persona_context` inside `core/stealth_launcher.py`:
+
+```python
+# Inside stealth_launcher.py
+proxy_url = os.getenv("RESIDENTIAL_PROXY")
+proxy_config = {"server": proxy_url} if proxy_url else None
+
+context = await playwright_lib.chromium.launch_persistent_context(
+    user_data_dir=abs_profile_path,
+    executable_path=executable_path,
+    headless=True,
+    args=args,
+    proxy=proxy_config, # Injects the residential proxy if available
+    ignore_default_args=["--enable-automation"],
+    viewport={"width": 1280, "height": 720}
+)
+```
+
+### 4. Execution
+Once your configuration is set, spin up your experimental cohorts using:
+```bash
+docker-compose up --build -d
+```
